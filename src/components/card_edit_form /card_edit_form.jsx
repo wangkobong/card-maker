@@ -21,9 +21,9 @@ const CardEditForm = ({ card }) => {
       <input className={styles.input} type="text" name="email" value ={email}/>
       <textarea className={styles.textarea} name="message" value={MessagePort}></textarea>
       <div className={styles.fileinput}>
-       <ImageFileInput />
+        <ImageFileInput />
       </div>
-       <Button name="Delete" onClick={onSubmit}/>
+        <Button name="Delete" onClick={onSubmit}/>
     </form>
   )
 }
