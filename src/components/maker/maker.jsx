@@ -1,87 +1,76 @@
 import React, { useEffect, useState } from 'react';
-import { useHistory } from 'react-router';
-import Editor from '../editor/editor';
+import { useHistory } from 'react-router-dom';
 import Footer from '../footer/footer';
 import Header from '../header/header';
+import Editor from '../editor/editor';
 import Preview from '../preview/preview';
 import styles from './maker.module.css';
 
-const Maker = ({FileInput, authService}) => {
-  const [cards, setCards] = useState({
-    1: {
-      id: '1',
-      name: 'ellie',
-      company: 'samsung',
-      theme: 'colorful',
-      title: 'Software Engineer',
-      email: 'ellie@gmail.com',
-      message: 'go for it',
-      fileName: 'ellie',
-      fileURL: 'ellie.png',
-    },
-    2: {
-      id: '2',
-      name: 'ellie2',
-      company: 'samsung',
-      theme: 'dark',
-      title: 'Software Engineer',
-      email: 'ellie@gmail.com',
-      message: 'go for it',
-      fileName: 'ellie',
-      fileURL: null,
-    },
-    3: {
-      id: '3',
-      name: 'ellie3',
-      company: 'samsung',
-      theme: 'light',
-      title: 'Software Engineer',
-      email: 'ellie@gmail.com',
-      message: 'go for it',
-      fileName: 'ellie',
-      fileURL: null,
-    },
-  });
+const Maker = ({ FileInput, authService, cardRepository }) => {
+  const historyState = useHistory().state;
+  const [cards, setCards] = useState({});
+  const [userId, setUserId] = useState(historyState && historyState.id);
+
   const history = useHistory();
-  const onLogout = () =>{
+  const onLogout = () => {
     authService.logout();
   };
 
   useEffect(() => {
+    if (!userId) {
+      return;
+    }
+    const stopSync = cardRepository.syncCards(userId, cards => {
+      setCards(cards);
+    });
+    return () => stopSync();
+  }, [userId]);
+
+  useEffect(() => {
     authService.onAuthChange(user => {
-      if(!user){
-        history.push('./');
+      if (user) {
+        setUserId(user.uid);
+        console.log(userId);
+      } else {
+        history.push('/');
       }
     });
   });
 
-
-  const createOrUpdateCard = (card) => {
+  const createOrUpdateCard = card => {
     setCards(cards => {
-      const updated = {...cards};
+      const updated = { ...cards };
       updated[card.id] = card;
       return updated;
     });
-  }
-  const deleteCard = (card) => {
+    cardRepository.saveCard(userId, card);
+  };
+
+  const deleteCard = card => {
     setCards(cards => {
-      const updated = {...cards};
+      const updated = { ...cards };
       delete updated[card.id];
       return updated;
     });
-  }
+    cardRepository.removeCard(userId, card);
+  };
 
-  
-  return (  
+  return (
     <section className={styles.maker}>
-      <Header onLogout={onLogout}/>
+      <Header onLogout={onLogout} />
       <div className={styles.container}>
-        <Editor FileInput={FileInput} cards={cards} addCard={createOrUpdateCard} updateCard={createOrUpdateCard} deleteCard={deleteCard} />
-        <Preview cards={cards}/>
+        <Editor
+          FileInput={FileInput}
+          cards={cards}
+          addCard={createOrUpdateCard}
+          updateCard={createOrUpdateCard}
+          deleteCard={deleteCard}
+        />
+        <Preview cards={cards} />
       </div>
       <Footer />
     </section>
-  )
+  );
 };
 
 export default Maker;
